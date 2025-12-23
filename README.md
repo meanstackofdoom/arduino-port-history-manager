@@ -96,10 +96,12 @@ python app.py
 
 Then open `http://127.0.0.1:5000` in your browser.
 
-### SimHub setup
+### SimHub setup (plugin install)
 
 1. Copy `ArduinoIdentifyPlugin.dll` into your SimHub plugins folder.
-2. Start SimHub and enable the plugin.
+   - Typically: `C:\Program Files (x86)\SimHub\Plugins` or your custom SimHub install path.
+   - You can also download the DLL from the latest GitHub release assets.
+2. Start SimHub and enable the plugin in the **Plugins** tab.
 3. Bind keys in SimHub:
    - NumPad 9 → `Trigger Identify Blink`
    - NumPad 0 → `Trigger Test Pattern`
@@ -119,6 +121,33 @@ SimHub calls the plugin action, and your Arduino firmware reacts based on
   - **Load** – replace `ports.json` with the selected profile.
 
 This is ideal for switching between *Desk*, *Rig*, or different sim setups.
+
+---
+
+## ✅ Manual Smoke Test
+
+After installing everything, you can quickly verify the setup with this checklist:
+
+1. **Start services**
+   - Launch SimHub with the Arduino Identify plugin enabled.
+   - Run `python app.py` and open `http://127.0.0.1:5000`.
+2. **Detect device**
+   - Plug in an Arduino.
+   - Confirm a card appears in the UI with the correct COM port and USB details.
+3. **Install / assign ID**
+   - Click **Install** on the card.
+   - Verify an ID appears on the card header and in `ports.json`.
+4. **Edit metadata**
+   - Click **Edit**, change name/role/tags/channel/group, and **Save**.
+   - Confirm the card updates immediately and `ports.json` reflects the changes.
+5. **Identify / Test**
+   - Click **Identify** and check the board blinks the expected identify pattern.
+   - Click **Test** and check the board runs the richer test pattern.
+6. **Persistence**
+   - Restart the Flask app and reload the page.
+   - Confirm the card, metadata, and ID are still correct.
+
+If all steps pass, your SimHub Arduino Manager stack is wired correctly end-to-end.
 
 ---
 
