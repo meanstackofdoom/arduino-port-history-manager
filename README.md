@@ -151,6 +151,21 @@ If all steps pass, your SimHub Arduino Manager stack is wired correctly end-to-e
 
 ---
 
+## ⚠️ Current Guardrails & Limitations
+
+The app includes a few safety checks:
+
+- Header badges for **SimHub Running / SimHub Not Running**
+- Header badges for **Plugin Found / Plugin Missing** (checks for `ArduinoIdentifyPlugin.dll`)
+- Identify/Test calls now **fail with a clear error** if SimHub isn’t running or the plugin DLL can’t be found
+
+Known limitation (not yet automatic):
+
+- The NumPad 9 / NumPad 0 hotkey bindings cannot be verified from Python – if they’re not mapped to the plugin actions,
+  Identify/Test will still do nothing even though the UI and badges look healthy.
+
+---
+
 ## 📓 Versioning & Changelog
 
 This project uses simple semantic-style versions starting from **0.1.0**.
@@ -163,4 +178,7 @@ See `CHANGELOG.md` for released versions and the planned roadmap.
 This is an experimental project aimed at making SimHub Arduino workflows nicer.
 Issues and pull requests are welcome – ideas around device health, better
 SimHub integration, and multi-rig setups are especially appreciated.
+
+> Built in a single late-night session as a proof that a small, focused tool
+> can make SimHub Arduino setups feel much more manageable.
 
