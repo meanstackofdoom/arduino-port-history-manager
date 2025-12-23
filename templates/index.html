@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Arduino Port Manager</title>
+
+<style>
+:root{
+  --panel:#151515;--panel-alt:#1d1d1d;--border:#2a2a2a;
+  --text:#eaeaea;--muted:#9aa0a6;
+  --accent:#4caf50;--danger:#ff4c4c;--info:#2196F3;
+}
+
+body[data-theme="light"]{
+  --panel:#f5f5f5;--panel-alt:#ffffff;--border:#d0d0d0;
+  --text:#111111;--muted:#60646c;
+  --accent:#1976d2;--danger:#d32f2f;--info:#1565c0;
+  background:radial-gradient(circle at top,#fafafa,#e0e0e0);
+  color:var(--text);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;padding:24px;
+  background:radial-gradient(circle at top,#111,#050505);
+  color:var(--text);font-family:"Segoe UI",system-ui;
+  display:flex;flex-direction:column;min-height:100vh;
+}
+header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:20px
+}
+h1{margin:0;color:var(--accent);font-size:24px}
+.stats{display:flex;gap:10px}
+.stat{
+  padding:6px 16px;border-radius:8px;
+  border:1px solid var(--border);font-size:13px;
+  background:var(--panel)
+}
+.stat.ok{border-color:var(--accent);color:#9eff9e}
+.stat.bad{border-color:var(--danger);color:#ff9e9e}
+
+.search input{
+  width:100%;padding:12px;border-radius:8px;
+  border:1px solid var(--border);
+  background:#0f0f0f;color:var(--text);
+  margin-bottom:20px
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:15px
+}
+.card{
+  background:linear-gradient(180deg,var(--panel),var(--panel-alt));
+  border:1px solid var(--border);
+  border-radius:10px;padding:15px
+}
+.card-header{
+  display:flex;justify-content:space-between
+}
+.card-port{
+  color:var(--accent);
+  font-family:monospace;
+  font-weight:bold
+}
+.badge{
+  font-size:9px;padding:2px 6px;
+  border-radius:4px;text-transform:uppercase
+}
+.actions{
+  display:flex;justify-content:space-between;
+  align-items:center;margin-top:10px;
+  border-top:1px solid var(--border);
+  padding-top:10px
+}
+button{
+  border:none;padding:6px 12px;
+  border-radius:4px;font-weight:600;
+  cursor:pointer;font-size:12px
+}
+.btn-install{background:var(--info);color:white}
+.btn-identify{background:#333;color:white;margin-left:5px}
+.btn-identify.active{
+  background:var(--danger);
+  animation:pulse .6s infinite
+}
+.btn-edit{background:var(--accent);color:#000;margin-left:5px}
+.btn-test{background:#555;color:white;margin-left:5px}
+
+.main{
+  flex:1 0 auto;
+}
+.footer{
+  margin-top:auto;
+  padding-top:10px;
+  border-top:1px solid var(--border);
+  font-size:11px;
+  color:var(--muted);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+@keyframes pulse{
+  0%{opacity:1}50%{opacity:.5}100%{opacity:1}
+}
+
+.modal{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.8);
+  display:none;align-items:center;
+  justify-content:center;z-index:100
+}
+.modal.open{display:flex}
+.modal-box{
+  background:var(--panel);
+  padding:20px;border-radius:10px;
+  border:1px solid var(--border);
+  width:350px
+}
+.modal-box input,select{
+  width:100%;margin-bottom:10px;
+  padding:8px;border-radius:4px;
+  background:#0f0f0f;color:var(--text);
+  border:1px solid var(--border)
+}
+</style>
+</head>
+
+<body>
+
+<div class="main">
+<header>
+  <div>
+    <h1>Arduino Port Manager</h1>
+    <div style="font-size:12px;color:var(--muted)">
+      SimHub Device Registry
+    </div>
+  </div>
+  <div class="stats">
+    <form method="post" action="/profile/load" style="display:flex;align-items:center;gap:6px;margin-right:10px;">
+      <select name="name" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;">
+        <option value="">Profiles…</option>
+        {% for p in profiles %}
+          <option value="{{ p }}">{{ p }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" style="background:#444;color:white;border-radius:6px;padding:4px 8px;font-size:12px;">Load</button>
+    </form>
+    <form method="post" action="/profile/save" style="display:flex;align-items:center;gap:6px;margin-right:10px;">
+      <input name="name" placeholder="Save as profile…" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:130px;">
+      <button type="submit" style="background:#555;color:white;border-radius:6px;padding:4px 8px;font-size:12px;">Save</button>
+    </form>
+    <button class="btn-install" onclick="bulkInstall()" style="margin-right: 10px;">Bulk Install All</button>
+    <div class="stat ok">🟢 {{ stats.connected }} Online</div>
+    <div class="stat bad">🔴 {{ stats.missing }} Offline</div>
+  </div>
+</header>
+
+<div class="search">
+  <input placeholder="Filter devices…" oninput="filterCards(this.value)">
+</div>
+
+<div class="grid">
+{% for d in devices %}
+  <div class="card"
+     data-search="{{ d.name }} {{ d.port }} {{ d.role }} {{ d.identify_id }} {{ d.channel }}">
+
+  <div class="card-header">
+    <div>
+      <strong style="font-size:16px">
+        {{ d.name if d.name else 'Unnamed Arduino' }}
+      </strong>
+
+      {% if d.role and d.role != 'Unassigned' %}
+        <div style="font-size:11px;color:#9aa0a6;margin-top:2px">
+          {{ d.role }}
+        </div>
+      {% endif %}
+
+      {% if d.channel is not none and d.channel != 0 %}
+        <div style="font-size:11px;color:var(--muted)">
+          Channel {{ d.channel }}
+        </div>
+      {% endif %}
+
+      {% if d.identify_id %}
+        <div style="font-size:11px;color:#9eff9e">
+          ID {{ d.identify_id }}
+        </div>
+      {% endif %}
+
+      <span class="card-port">{{ d.port }}</span>
+    </div>
+    <div class="badge {{ 'ok' if d.status=='connected' else 'missing' }}">
+      {{ d.status }}
+    </div>
+  </div>
+
+  {% if d.description or d.manufacturer or d.vid or d.pid or d.serial_number %}
+  <div style="margin-top:8px;font-size:11px;color:var(--muted)">
+    {% if d.description %}
+      {{ d.description }}<br>
+    {% endif %}
+    {% if d.manufacturer %}
+      {{ d.manufacturer }}<br>
+    {% endif %}
+    {% if d.vid or d.pid %}
+      USB {{ d.vid or '----' }}:{{ d.pid or '----' }}<br>
+    {% endif %}
+    {% if d.serial_number %}
+      SN {{ d.serial_number }}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if d.connected_for %}
+  <div style="margin-top:4px;font-size:11px;color:var(--muted)">
+    Connected for {{ d.connected_for }}
+  </div>
+  {% endif %}
+
+  <div class="actions">
+    <span style="font-size:11px;color:var(--muted)">
+      {{ d.role }}{% if d.group %} · {{ d.group }}{% endif %}
+    </span>
+    <div>
+      <button class="btn-install"
+              onclick="installDevice('{{ d.key }}')">
+        Install
+      </button>
+
+      <button class="btn-identify"
+              onclick="identify(this,'{{ d.key }}',{{ d.identify_id or 0 }})">
+        Identify
+      </button>
+
+      <button class="btn-test"
+              onclick="testDevice('{{ d.key }}',{{ d.identify_id or 0 }})">
+        Test
+      </button>
+
+      <button class="btn-edit"
+              onclick="openModal(
+                '{{ d.key }}',
+                '{{ d.name }}',
+                '{{ d.tags|join(', ') }}',
+                '{{ d.role }}',
+                {{ d.channel or 0 }},
+                '{{ d.group or '' }}'
+              )">
+        Edit
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="footer">
+  <span>
+    Made by Matthew Wicks · JOML – Just One More Lap
+    <button type="button"
+            onclick="openAbout()"
+            style="margin-left:8px;background:#333;color:white;border-radius:6px;padding:3px 8px;font-size:11px;border:none;cursor:pointer;">
+      About
+    </button>
+    <button type="button"
+            onclick="openPlanned()"
+            style="margin-left:4px;background:#333;color:white;border-radius:6px;padding:3px 8px;font-size:11px;border:none;cursor:pointer;">
+      Planned
+    </button>
+    <button type="button"
+            onclick="openChangelog()"
+            style="margin-left:4px;background:#333;color:white;border-radius:6px;padding:3px 8px;font-size:11px;border:none;cursor:pointer;">
+      Changelog
+    </button>
+  </span>
+  <span style="display:flex;align-items:center;gap:8px;">
+    <button id="theme-toggle"
+            type="button"
+            style="background:#333;color:white;border-radius:6px;padding:3px 8px;font-size:11px;border:none;cursor:pointer;">
+      Dark
+    </button>
+    <span>v{{ stats.last_scan }}</span>
+  </span>
+</div>
+
+<div class="modal" id="about-modal">
+  <div class="modal-box">
+    <h2 style="color:var(--accent);margin:0 0 10px">About</h2>
+    <p style="font-size:12px;color:var(--muted);line-height:1.4">
+      This Arduino Port Manager keeps a stable JSON registry of your SimHub Arduinos
+      (name, role, channel, group, and identify ID), and drives a custom SimHub plugin
+      to blink or test each device on demand.
+    </p>
+    <p style="font-size:12px;color:var(--muted);line-height:1.4">
+      Built with Python, Flask, pyserial, and a SimHub C# plugin so you can manage
+      multiple rigs and Arduinos without fighting COM ports.
+    </p>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+      <button type="button"
+              onclick="closeAbout()"
+              style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="planned-modal">
+  <div class="modal-box">
+    <h2 style="color:var(--accent);margin:0 0 10px">Planned Features</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:6px;"><strong>0.2.x – Device Health &amp; Metadata</strong></p>
+    <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:0;">
+      <li>Live device health / heartbeat indicators</li>
+      <li>RX / TX counters from SimHub (when API available)</li>
+      <li>Firmware name &amp; MCU type display</li>
+      <li>Baud rate &amp; LED count metadata</li>
+      <li>Improved USB key normalization</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:6px;margin-top:10px;"><strong>0.3.x – Power User Features</strong></p>
+    <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:0;">
+      <li>Device grouping &amp; multi-profile support</li>
+      <li>Export / import configurations</li>
+      <li>Multi-rig support</li>
+      <li>Improved SimHub API integration (if available)</li>
+      <li>Optional background polling service</li>
+    </ul>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+      <button type="button"
+              onclick="closePlanned()"
+              style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="changelog-modal">
+  <div class="modal-box" style="max-height:70vh;overflow:auto;">
+    <h2 style="color:var(--accent);margin:0 0 10px">Changelog</h2>
+    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:6px;">
+      Version <strong>0.1.0</strong> – Initial public release (2025-12-24).
+    </p>
+    <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:0;">
+      <li>Initial SimHub Arduino Manager dashboard</li>
+      <li>Automatic detection of connected Arduino serial ports</li>
+      <li>Persistent device registry in <code>ports.json</code></li>
+      <li>Per-device Identify ID, roles, tags, channels and groups</li>
+      <li>Identify / Test actions wired through a custom SimHub plugin</li>
+      <li>Profiles, hardware details, and connection duration per device</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px;">
+      See <code>CHANGELOG.md</code> in the project root for the full history and planned roadmap.
+    </p>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+      <button type="button"
+              onclick="closeChangelog()"
+              style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+{% endfor %}
+</div>
+
+<div class="modal" id="modal">
+<form class="modal-box" method="post" action="/update">
+  <h2 style="color:var(--accent);margin:0 0 15px">
+    Device Settings
+  </h2>
+  <input type="hidden" name="key" id="m-key">
+  <input name="name" id="m-name" placeholder="Device name (e.g. Desk LEDs)">
+  <input name="tags" id="m-tags" placeholder="Tags (desk, dash, left)">
+  <select name="role" id="m-role">
+    <option value="Unassigned">Unassigned</option>
+    <option value="LED">LED</option>
+    <option value="Gauge">Gauge</option>
+    <option value="Buttons">Buttons</option>
+    <option value="Other">Other</option>
+  </select>
+  <select name="channel" id="m-channel">
+    <option value="0">Channel 0 – All</option>
+    <option value="1">Channel 1 – Left</option>
+    <option value="2">Channel 2 – Right</option>
+    <option value="3">Channel 3 – Dash</option>
+  </select>
+  <input name="group" id="m-group" placeholder="Group (Desk, Wheel, Rig)">
+  <div style="display:flex;gap:10px">
+    <button type="button"
+            style="background:#444;flex:1"
+            onclick="closeModal()">
+      Cancel
+    </button>
+    <button type="submit"
+            style="background:var(--accent);flex:1">
+      Save
+    </button>
+  </div>
+</form>
+</div>
+
+<script>
+const modal = document.getElementById("modal");
+const aboutModal = document.getElementById("about-modal");
+const plannedModal = document.getElementById("planned-modal");
+const changelogModal = document.getElementById("changelog-modal");
+const m_key = document.getElementById("m-key");
+const m_name = document.getElementById("m-name");
+const m_tags = document.getElementById("m-tags");
+const m_role = document.getElementById("m-role");
+const m_channel = document.getElementById("m-channel");
+const m_group = document.getElementById("m-group");
+const themeToggle = document.getElementById("theme-toggle");
+
+function installDevice(key){
+  fetch(`/install/${key}`,{method:"POST"})
+    .then(r=>r.ok?alert("Installed"):alert("Install failed"));
+}
+
+function identify(btn,key,id){
+  if(!id){
+    alert("No Identify ID assigned.\nInstall the device first.");
+    return;
+  }
+
+  btn.classList.add("active");
+  btn.disabled = true;
+  btn.innerText = `Blinking ID ${id}…`;
+
+  fetch(`/identify/${key}`, { method: "POST" })
+    .finally(() => {
+      setTimeout(() => {
+        btn.classList.remove("active");
+        btn.disabled = false;
+        btn.innerText = "Identify";
+      }, 3500);
+    });
+}
+
+function testDevice(key,id){
+  if(!id){
+    alert("No Identify ID assigned.\nInstall the device first.");
+    return;
+  }
+
+  fetch(`/test/${key}`, { method: "POST" });
+}
+
+function openModal(k,n,t,r,ch,g){
+  modal.classList.add("open");
+  m_key.value = k;
+  m_name.value = n || "";
+  m_tags.value = t || "";
+  m_role.value = r || "Unassigned";
+  m_channel.value = (ch || 0);
+  m_group.value = g || "";
+}
+function closeModal(){
+  modal.classList.remove("open");
+}
+function filterCards(v){
+  v=v.toLowerCase();
+  document.querySelectorAll(".card").forEach(c=>{
+    c.style.display=
+      c.dataset.search.toLowerCase().includes(v)?"":"none";
+  });
+}
+setInterval(()=>{
+  if(!modal.classList.contains("open"))
+    location.reload();
+},15000);
+
+function bulkInstall() {
+    if (!confirm("This will assign IDs to all uninstalled devices. Continue?")) return;
+    
+    fetch('/bulk_install', { method: "POST" })
+        .then(r => r.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        });
+}
+
+function openAbout(){
+  if(aboutModal){
+    aboutModal.classList.add("open");
+  }
+}
+function closeAbout(){
+  if(aboutModal){
+    aboutModal.classList.remove("open");
+  }
+}
+
+function openPlanned(){
+  if(plannedModal){
+    plannedModal.classList.add("open");
+  }
+}
+function closePlanned(){
+  if(plannedModal){
+    plannedModal.classList.remove("open");
+  }
+}
+
+function openChangelog(){
+  if(changelogModal){
+    changelogModal.classList.add("open");
+  }
+}
+function closeChangelog(){
+  if(changelogModal){
+    changelogModal.classList.remove("open");
+  }
+}
+
+function applyTheme(theme){
+  document.body.setAttribute("data-theme", theme);
+  if(themeToggle){
+    themeToggle.textContent = theme === "light" ? "Light" : "Dark";
+  }
+  try{
+    localStorage.setItem("theme", theme);
+  }catch(e){}
+}
+
+(function initTheme(){
+  let theme = "dark";
+  try{
+    theme = localStorage.getItem("theme") || "dark";
+  }catch(e){}
+  applyTheme(theme);
+
+  if(themeToggle){
+    themeToggle.onclick = function(){
+      const current = document.body.getAttribute("data-theme") || "dark";
+      const next = current === "light" ? "dark" : "light";
+      applyTheme(next);
+    };
+  }
+})();
+</script>
+
+</body>
+</html>

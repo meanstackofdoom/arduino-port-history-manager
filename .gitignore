@@ -1,0 +1,23 @@
+# Python / virtualenv
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# VS / Rider / IDEs
+.vs/
+.idea/
+*.user
+*.suo
+
+# Build artifacts
+plugin/ArduinoIdentifyPlugin/ArduinoIdentifyPlugin/bin/
+plugin/ArduinoIdentifyPlugin/ArduinoIdentifyPlugin/obj/
+
+# OS junk
+*.log
+Thumbs.db
+.DS_Store
+
+
