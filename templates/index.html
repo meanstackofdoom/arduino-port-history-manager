@@ -102,6 +102,32 @@ button{
   align-items:center;
 }
 
+.tooltip{
+  position:relative;
+  display:inline-block;
+}
+.tooltip-bubble{
+  position:absolute;
+  bottom:130%;
+  right:0;
+  background:var(--panel-alt);
+  color:var(--text);
+  padding:6px 8px;
+  border-radius:4px;
+  border:1px solid var(--border);
+  white-space:nowrap;
+  font-size:10px;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(4px);
+  transition:opacity .15s ease,transform .15s ease;
+  z-index:200;
+}
+.tooltip:hover .tooltip-bubble{
+  opacity:1;
+  transform:translateY(0);
+}
+
 @keyframes pulse{
   0%{opacity:1}50%{opacity:.5}100%{opacity:1}
 }
@@ -152,7 +178,7 @@ button{
       <input name="name" placeholder="Save as profile…" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:130px;">
       <button type="submit" style="background:#555;color:white;border-radius:6px;padding:4px 8px;font-size:12px;">Save</button>
     </form>
-    <button class="btn-install" onclick="bulkInstall()" style="margin-right: 10px;">Bulk Install All</button>
+    <button class="btn-install" onclick="bulkInstall()" style="margin-right: 10px;" title="Assign IDs to all devices which don't yet have one">Bulk Install All</button>
     <div class="stat ok">🟢 {{ stats.connected }} Online</div>
     <div class="stat bad">🔴 {{ stats.missing }} Offline</div>
   </div>
@@ -226,17 +252,22 @@ button{
       {{ d.role }}{% if d.group %} · {{ d.group }}{% endif %}
     </span>
     <div>
+      {% if not d.installed %}
       <button class="btn-install"
+              title="Assign or reassign an Identify ID for this device"
               onclick="installDevice('{{ d.key }}')">
         Install
       </button>
+      {% endif %}
 
       <button class="btn-identify"
+              title="Short identify blink using NumPad 9 in SimHub"
               onclick="identify(this,'{{ d.key }}',{{ d.identify_id or 0 }})">
         Identify
       </button>
 
       <button class="btn-test"
+              title="Longer test pattern using NumPad 0 in SimHub"
               onclick="testDevice('{{ d.key }}',{{ d.identify_id or 0 }})">
         Test
       </button>
@@ -277,12 +308,22 @@ button{
     </button>
   </span>
   <span style="display:flex;align-items:center;gap:8px;">
+    <div class="tooltip">
+      <button type="button"
+              aria-label="Keyboard shortcuts"
+              style="background:#333;color:white;border-radius:50%;width:22px;height:22px;font-size:11px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+        ?
+      </button>
+      <div class="tooltip-bubble">
+        Num 9 = Identify · Num 0 = Test · Auto-rescan every 15s
+      </div>
+    </div>
     <button id="theme-toggle"
             type="button"
             style="background:#333;color:white;border-radius:6px;padding:3px 8px;font-size:11px;border:none;cursor:pointer;">
       Dark
     </button>
-    <span>v{{ stats.last_scan }}</span>
+    <span>v0.1.0 · scan {{ stats.last_scan }}</span>
   </span>
 </div>
 
@@ -321,8 +362,8 @@ button{
     </ul>
     <p style="font-size:12px;color:var(--muted);margin-bottom:6px;margin-top:10px;"><strong>0.3.x – Power User Features</strong></p>
     <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:0;">
-      <li>Device grouping &amp; multi-profile support</li>
-      <li>Export / import configurations</li>
+      <li>Improved multi-profile management (per-rig presets, cloning, etc.)</li>
+      <li>Export / import configurations beyond simple JSON snapshots</li>
       <li>Multi-rig support</li>
       <li>Improved SimHub API integration (if available)</li>
       <li>Optional background polling service</li>

@@ -16,14 +16,19 @@ Features may evolve rapidly as SimHub integrations are explored.
 - Automatic detection of connected Arduino serial ports
 - Persistent device registry stored in `ports.json`
 - Per-device **Identify ID** assignment system
-- Visual **Identify / Blink** action to map physical devices
+- Visual **Identify / Blink** and **Test** actions to map and verify devices
+- Channel-aware identify and test modes driven by a custom SimHub plugin
 - Bulk install function to auto-assign IDs to all devices
 - Editable device metadata:
   - Name
   - Role (LED / Gauge / Buttons / Other)
   - Tags
-- Clean, dark-mode UI designed for sim racing environments
-- Flask-based backend with lightweight frontend
+  - Channel (zone)
+  - Group (Desk / Wheel / Rig / etc.)
+- Connection duration indicator and basic USB hardware details per device
+- Profiles system for saving and loading multiple `ports.json` snapshots
+- Clean dark / light themed UI designed for sim racing environments
+- Flask-based backend with a lightweight single-page frontend
 
 ### 🧪 Experimental
 - Keyboard-triggered SimHub Identify integration
@@ -54,8 +59,8 @@ Features may evolve rapidly as SimHub integrations are explored.
 - Improved USB key normalization
 
 ### 🚧 0.3.x – Power User Features
-- Device grouping & profiles
-- Export / import configurations
+- Improved multi-profile management (per-rig presets, cloning, etc.)
+- Export / import configurations beyond simple JSON snapshots
 - Multi-rig support
 - Improved SimHub API integration (if available)
 - Optional background polling service
