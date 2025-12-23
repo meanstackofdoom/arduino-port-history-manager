@@ -1,2 +1,29 @@
 {
+  "USB:VID=2341:PID=0043:SN=EXAMPLE1": {
+    "name": "Under Monitor",
+    "role": "LED",
+    "tags": [
+      "desk",
+      "monitor"
+    ],
+    "channel": 0,
+    "group": "Desk",
+    "identify_id": 1,
+    "installed": true
+  },
+  "USB:VID=1A86:PID=7523:SN=EXAMPLE2": {
+    "name": "Wheel LEDs",
+    "role": "LED",
+    "tags": [
+      "wheel",
+      "rim"
+    ],
+    "channel": 1,
+    "group": "Wheel",
+    "identify_id": 2,
+    "installed": true
+  },
+  "USB:VID=1A86:PID=7523:SN=UNKNOWN": {
+    "connected_since": "2025-12-23T18:25:03.249747"
+  }
 }
