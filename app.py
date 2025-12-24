@@ -53,6 +53,9 @@ def index():
     if profile_dir.exists():
         profiles = [p.stem for p in profile_dir.glob("*.json")]
 
+    # Get available SimHub devices for linking dropdown
+    simhub_devices = port_manager.get_simhub_devices()
+
     stats = {
         "connected": sum(d["status"] == "connected" for d in devices),
         "missing": 0,
@@ -63,7 +66,7 @@ def index():
         "plugin_installed": is_plugin_installed(),
     }
 
-    return render_template("index.html", devices=devices, stats=stats, profiles=profiles)
+    return render_template("index.html", devices=devices, stats=stats, profiles=profiles, simhub_devices=simhub_devices)
 
 @app.route("/install/<path:key>", methods=["POST"])
 def install(key):
@@ -136,6 +139,14 @@ def update():
     group_val = (request.form.get("group") or "").strip()
     if group_val:
         current["group"] = group_val
+
+    # SimHub UID link (optional – links this device to SimHub metadata)
+    simhub_uid = (request.form.get("simhub_uid") or "").strip()
+    if simhub_uid:
+        current["simhub_uid"] = simhub_uid
+    elif "simhub_uid" in current:
+        # Allow unlinking by clearing the field
+        del current["simhub_uid"]
 
     port_manager.saved[key] = current
 

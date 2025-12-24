@@ -11,6 +11,73 @@ from datetime import datetime
 
 CONFIG_FILE = Path(r"C:\Users\endfm\Desktop\ports\ports.json")
 
+# SimHub SerialDashPlugin config – this is where SimHub stores device metadata
+SIMHUB_CONFIG_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\SerialDashPlugin.json")
+
+# =========================
+# SimHub Config Reader
+# =========================
+
+def load_simhub_devices() -> dict:
+    """
+    Read SimHub's SerialDashPlugin.json and return a dict keyed by deviceUniqueId.
+    Each entry contains the SimHub metadata (RgbLeds, displayModules, Motors, etc.).
+    """
+    if not SIMHUB_CONFIG_PATH.exists():
+        print(f"[SIMHUB] Config not found at {SIMHUB_CONFIG_PATH}")
+        return {}
+
+    try:
+        data = json.loads(SIMHUB_CONFIG_PATH.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"[SIMHUB] Failed to parse config: {e}")
+        return {}
+
+    result = {}
+    devices = data.get("MultipleArduinoSettings", [])
+    
+    for dev in devices:
+        uid = dev.get("deviceUniqueId")
+        if uid:
+            result[uid] = {
+                "simhub_name": dev.get("deviceName", ""),
+                "simhub_uid": uid,
+                "rgb_leds": dev.get("RgbLeds", 0),
+                "display_modules": dev.get("displayModules", 0),
+                "motors": dev.get("Motors", 0),
+                "read_buttons": dev.get("readButtons", False),
+                "disabled": dev.get("disabled", False),
+                "speed_level": dev.get("speedLevel", 0),
+                "rotation": dev.get("Rotation", 0),
+                "target_rgb_matrix": dev.get("TargetRGBMatrix", 0),
+            }
+    
+    # Also store whitelist/blacklist for reference
+    whitelist = data.get("WhiteList", [])
+    blacklist = data.get("BlackList", [])
+    
+    print(f"[SIMHUB] Loaded {len(result)} devices from config (whitelist: {whitelist}, blacklist: {blacklist})")
+    return result
+
+
+# Cached SimHub devices (refreshed on each scan)
+_simhub_devices_cache: dict = {}
+
+
+def get_simhub_devices() -> list:
+    """
+    Return a list of all SimHub devices for UI dropdowns.
+    Each entry has uid, name, rgb_leds, display_modules, etc.
+    """
+    global _simhub_devices_cache
+    if not _simhub_devices_cache:
+        _simhub_devices_cache = load_simhub_devices()
+    
+    return [
+        {"uid": uid, **data}
+        for uid, data in _simhub_devices_cache.items()
+    ]
+
 # =========================
 # Load / Save
 # =========================
@@ -137,13 +204,16 @@ def _format_duration(delta_seconds: int) -> str:
 
 
 def scan_ports():
+    global _simhub_devices_cache
+    
     results = []
     ports = list(serial.tools.list_ports.comports())
     now = datetime.utcnow()
     touched = False
 
-    # SimHub integration is currently disabled (no HTTP API),
-    # so we treat any detected COM port as "connected".
+    # Refresh SimHub device cache on each scan
+    _simhub_devices_cache = load_simhub_devices()
+
     for p in ports:
         key = make_device_key(p)
         entry = dict(saved.get(key, {}))
@@ -174,6 +244,12 @@ def scan_ports():
         vid_hex = f"{vid:04X}" if isinstance(vid, int) else None
         pid_hex = f"{pid:04X}" if isinstance(pid, int) else None
 
+        # Check if this device is linked to a SimHub UID
+        linked_uid = entry.get("simhub_uid")
+        simhub_info = None
+        if linked_uid and linked_uid in _simhub_devices_cache:
+            simhub_info = _simhub_devices_cache[linked_uid]
+
         results.append({
             "key": key,
             "port": p.device,
@@ -190,7 +266,8 @@ def scan_ports():
             "vid": vid_hex,
             "pid": pid_hex,
             "connected_for": connected_for,
-            "simhub": None,
+            "simhub_uid": linked_uid,
+            "simhub": simhub_info,
         })
 
     if touched:

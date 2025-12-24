@@ -153,7 +153,9 @@ button{
   background:var(--panel);
   padding:20px;border-radius:10px;
   border:1px solid var(--border);
-  width:350px
+  width:350px;
+  max-height:85vh;
+  overflow-y:auto;
 }
 .modal-box input,select{
   width:100%;margin-bottom:10px;
@@ -271,6 +273,43 @@ button{
   </div>
   {% endif %}
 
+  {% if d.simhub %}
+  <div style="margin-top:8px;padding:8px;background:rgba(76,175,80,0.1);border:1px solid var(--accent);border-radius:6px;">
+    <div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:4px;">
+      🔗 SIMHUB LINKED
+    </div>
+    <div style="font-size:11px;color:var(--text);display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+      {% if d.simhub.simhub_name %}
+        <span>Name: <strong>{{ d.simhub.simhub_name }}</strong></span>
+      {% endif %}
+      {% if d.simhub.rgb_leds %}
+        <span>RGB LEDs: <strong>{{ d.simhub.rgb_leds }}</strong></span>
+      {% endif %}
+      {% if d.simhub.display_modules %}
+        <span>Displays: <strong>{{ d.simhub.display_modules }}</strong></span>
+      {% endif %}
+      {% if d.simhub.motors %}
+        <span>Motors: <strong>{{ d.simhub.motors }}</strong></span>
+      {% endif %}
+      {% if d.simhub.read_buttons %}
+        <span>Buttons: <strong>Yes</strong></span>
+      {% endif %}
+      {% if d.simhub.disabled %}
+        <span style="color:var(--danger)">Status: <strong>Disabled</strong></span>
+      {% else %}
+        <span style="color:var(--accent)">Status: <strong>Enabled</strong></span>
+      {% endif %}
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:4px;word-break:break-all;">
+      UID: {{ d.simhub_uid }}
+    </div>
+  </div>
+  {% elif d.simhub_uid %}
+  <div style="margin-top:8px;padding:6px;background:rgba(255,76,76,0.1);border:1px solid var(--danger);border-radius:6px;font-size:10px;color:var(--danger);">
+    ⚠️ SimHub UID set but device not found in SimHub config
+  </div>
+  {% endif %}
+
   <div class="actions">
     <span style="font-size:11px;color:var(--muted)">
       {{ d.role }}{% if d.group %} · {{ d.group }}{% endif %}
@@ -314,7 +353,8 @@ button{
                 '{{ d.tags|join(', ') }}',
                 '{{ d.role }}',
                 {{ d.channel or 0 }},
-                '{{ d.group or '' }}'
+                '{{ d.group or '' }}',
+                '{{ d.simhub_uid or '' }}'
               )">
         Edit
       </button>
@@ -488,6 +528,17 @@ button{
   <div class="field-help">
     High-level rig location to help group devices (Desk, Wheel, Rig, Dash, etc.).
   </div>
+  <select name="simhub_uid" id="m-simhub-uid">
+    <option value="">— No SimHub Link —</option>
+    {% for sh in simhub_devices %}
+      <option value="{{ sh.uid }}">
+        {{ sh.simhub_name or 'Unnamed' }} · {{ sh.rgb_leds }} LEDs · {{ sh.display_modules }} displays
+      </option>
+    {% endfor %}
+  </select>
+  <div class="field-help">
+    Link to a SimHub device to pull metadata (LED count, modules, motors, etc.).
+  </div>
   <div style="display:flex;gap:10px">
     <button type="button"
             style="background:#444;flex:1"
@@ -513,6 +564,7 @@ const m_tags = document.getElementById("m-tags");
 const m_role = document.getElementById("m-role");
 const m_channel = document.getElementById("m-channel");
 const m_group = document.getElementById("m-group");
+const m_simhub_uid = document.getElementById("m-simhub-uid");
 const themeToggle = document.getElementById("theme-toggle");
 
 function installDevice(key){
@@ -569,7 +621,7 @@ function testDevice(key,id){
     });
 }
 
-function openModal(k,n,t,r,ch,g){
+function openModal(k,n,t,r,ch,g,shuid){
   modal.classList.add("open");
   m_key.value = k;
   m_name.value = n || "";
@@ -577,6 +629,7 @@ function openModal(k,n,t,r,ch,g){
   m_role.value = r || "Unassigned";
   m_channel.value = (ch || 0);
   m_group.value = g || "";
+  m_simhub_uid.value = shuid || "";
 }
 function closeModal(){
   modal.classList.remove("open");

@@ -28,7 +28,14 @@ and a fast UI to identify, test, and organize them without fighting COM ports.
   - Channel-aware identify (`IdentifyChannel`) and mode (`IdentifyMode`) support
 - **Hardware details**
   - COM port, USB VID:PID, serial, description, manufacturer
-  - “Connected for” indicator derived from first-seen timestamp
+  - "Connected for" indicator derived from first-seen timestamp
+- **SimHub Config Integration** *(New in v0.2.0)*
+  - Reads `SerialDashPlugin.json` directly from SimHub's data folder
+  - Link local devices to SimHub devices via their Unique ID
+  - Shows SimHub metadata on linked cards:
+    - Device name, RGB LED count, display modules, motors
+    - Button read status, enabled/disabled state
+  - Green "SIMHUB LINKED" badge on linked device cards
 
 ---
 
@@ -53,9 +60,10 @@ and a fast UI to identify, test, and organize them without fighting COM ports.
 ## 🧱 Architecture
 
 - `app.py` – Flask app, routes, profile handling, and update logic.
-- `port_manager.py` – port scanning, config load/save, ID assignment, identify/test triggers.
+- `port_manager.py` – port scanning, config load/save, ID assignment, identify/test triggers, SimHub config reader.
 - `templates/index.html` – single-page UI (cards, modals, footer, theming).
 - `ports.json` – device registry (generated/maintained automatically).
+- SimHub reads from: `C:\Program Files (x86)\SimHub\PluginsData\Common\SerialDashPlugin.json`
 - `plugin/ArduinoIdentifyPlugin` – SimHub C# plugin that exposes:
   - `IdentifyPulse`
   - `IdentifyTargetId`
@@ -142,12 +150,15 @@ After installing everything, you can quickly verify the setup with this checklis
 4. **Edit metadata**
    - Click **Edit**, change name/role/tags/channel/group, and **Save**.
    - Confirm the card updates immediately and `ports.json` reflects the changes.
-5. **Identify / Test**
+5. **Link to SimHub device** *(v0.2.0+)*
+   - Click **Edit** and use the **SimHub Link** dropdown to select a SimHub device.
+   - Save and confirm the card shows a green "SIMHUB LINKED" badge with LED count, modules, etc.
+6. **Identify / Test**
    - Click **Identify** and check the board blinks the expected identify pattern.
    - Click **Test** and check the board runs the richer test pattern.
-6. **Persistence**
+7. **Persistence**
    - Restart the Flask app and reload the page.
-   - Confirm the card, metadata, and ID are still correct.
+   - Confirm the card, metadata, ID, and SimHub link are still correct.
 
 If all steps pass, your SimHub Arduino Manager stack is wired correctly end-to-end.
 

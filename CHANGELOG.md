@@ -7,6 +7,31 @@ Features may evolve rapidly as SimHub integrations are explored.
 
 ---
 
+## [0.2.0] – SimHub Config Integration
+**2025-12-24**
+
+### ✨ Added
+- **SimHub Config Reader**: Directly reads `SerialDashPlugin.json` from SimHub's PluginsData folder
+- **Device Linking**: Link local Arduino devices to SimHub devices via their Unique ID
+- **SimHub Metadata Display**: Linked devices now show:
+  - SimHub device name
+  - RGB LED count
+  - Display module count
+  - Motor count
+  - Button read status
+  - Enabled/Disabled status
+- New **SimHub Link** dropdown in the Edit modal to associate devices
+- Visual indicator on cards showing linked SimHub devices with a green "SIMHUB LINKED" badge
+- Warning indicator when a SimHub UID is set but the device isn't found in SimHub config
+
+### 🛠️ Internal
+- Added `load_simhub_devices()` function to parse SimHub's MultipleArduinoSettings
+- Added `get_simhub_devices()` helper for UI dropdowns
+- SimHub device cache refreshed on each port scan
+- New `simhub_uid` field in device configuration for persistent linking
+
+---
+
 ## [0.1.0] – Initial Public Release
 **2025-12-24**
 
@@ -60,12 +85,12 @@ Features may evolve rapidly as SimHub integrations are explored.
 
 ## Planned (Upcoming)
 
-### 🚧 0.2.x – Device Health & Metadata
+### 🚧 0.2.x – Device Health & Metadata (Partially Complete ✅)
+- ✅ SimHub config file integration (LED count, modules, motors)
+- ✅ Device linking via SimHub Unique ID
 - Live device health / heartbeat indicators
-- RX / TX counters from SimHub
-- Firmware name & MCU type display
-- Baud rate & LED count metadata
-- Improved USB key normalization
+- RX / TX counters (requires SimHub live API)
+- Firmware name & MCU type display (if exposed by SimHub)
 
 ### 🚧 0.3.x – Power User Features
 - Improved multi-profile management (per-rig presets, cloning, etc.)
