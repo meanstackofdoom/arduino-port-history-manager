@@ -126,6 +126,35 @@ def load_custom_serial_devices() -> list:
             except:
                 error_time_str = last_error_date[:16] if len(last_error_date) > 16 else last_error_date
         
+        # Parse update messages configuration
+        update_messages = dev.get("UpdateMessages", [])
+        update_freq = 0
+        has_expression = False
+        expression_type = ""
+        
+        for msg in update_messages:
+            if msg.get("IsEnabled", False):
+                update_freq = msg.get("MaximumFrequency", 0)
+                message_config = msg.get("Message", {})
+                expression = message_config.get("Expression", "")
+                if expression:
+                    has_expression = True
+                    # Detect expression type
+                    if "TurboBoost" in expression or "Turbo" in expression:
+                        expression_type = "Boost Gauge"
+                    elif "RPM" in expression:
+                        expression_type = "RPM Display"
+                    elif "Speed" in expression:
+                        expression_type = "Speedometer"
+                    elif "Gear" in expression:
+                        expression_type = "Gear Indicator"
+                    else:
+                        expression_type = "Custom Expression"
+        
+        # Check for connect/disconnect messages
+        on_connect = dev.get("OnConnectMessage", {}).get("Expression", "")
+        on_disconnect = dev.get("OnDisconnectMessage", {}).get("Expression", "")
+        
         devices.append({
             "name": dev.get("Name", "Custom Serial Device"),
             "description": dev.get("Description", ""),
@@ -133,12 +162,21 @@ def load_custom_serial_devices() -> list:
             "baud_rate": dev.get("BaudRate", 0),
             "is_enabled": dev.get("IsEnabled", False),
             "is_connected": dev.get("IsConnected", False),
+            "is_connecting": dev.get("IsConnecting", False),
+            "is_frozen": dev.get("IsFreezed", False),
             "dtr_enable": dev.get("DtrEnable", False),
             "rts_enable": dev.get("RtsEnable", False),
             "auto_reconnect": dev.get("AutomaticReconnect", False),
+            "startup_delay": dev.get("StartupDelayMs", 0),
             "last_error": dev.get("LastErrorMessage"),
             "last_error_date": error_time_str,
             "log_incoming": dev.get("LogIncomingData", False),
+            # New fields
+            "update_frequency": update_freq,
+            "has_expression": has_expression,
+            "expression_type": expression_type,
+            "has_on_connect": bool(on_connect),
+            "has_on_disconnect": bool(on_disconnect),
         })
     
     print(f"[SIMHUB] Loaded {len(devices)} Custom Serial devices")

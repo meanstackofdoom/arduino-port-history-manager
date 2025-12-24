@@ -349,14 +349,22 @@ button{
   <h3>
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
     Custom Serial Devices
+    <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px;">{{ custom_serial_devices|length }} device{{ 's' if custom_serial_devices|length != 1 else '' }}</span>
   </h3>
   <div class="custom-serial-grid">
     {% for cs in custom_serial_devices %}
     <div class="serial-card">
       <div class="serial-card-header">
-        <span class="serial-card-title">{{ cs.name }}</span>
+        <div>
+          <span class="serial-card-title">{{ cs.name }}</span>
+          {% if cs.expression_type %}
+          <div style="font-size:10px;color:var(--accent);margin-top:2px;">{{ cs.expression_type }}</div>
+          {% endif %}
+        </div>
         {% if not cs.is_enabled %}
         <span class="serial-status disabled">Disabled</span>
+        {% elif cs.is_connecting %}
+        <span class="serial-status" style="background:var(--warning-dim);color:var(--warning);">Connecting</span>
         {% elif cs.is_connected %}
         <span class="serial-status connected">Connected</span>
         {% else %}
@@ -366,11 +374,29 @@ button{
       <div class="serial-details">
         <span><span class="label">Port</span> {{ cs.port }}</span>
         <span><span class="label">Baud</span> {{ cs.baud_rate }}</span>
+        <span><span class="label">Update Rate</span> {{ cs.update_frequency }}Hz</span>
+        <span><span class="label">Startup Delay</span> {{ cs.startup_delay }}ms</span>
         <span><span class="label">DTR</span> {{ '✓' if cs.dtr_enable else '✗' }}</span>
         <span><span class="label">RTS</span> {{ '✓' if cs.rts_enable else '✗' }}</span>
         <span><span class="label">Auto-Reconnect</span> {{ '✓' if cs.auto_reconnect else '✗' }}</span>
         <span><span class="label">Logging</span> {{ '✓' if cs.log_incoming else '✗' }}</span>
       </div>
+      {% if cs.has_expression or cs.has_on_connect or cs.has_on_disconnect %}
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-subtle);font-size:10px;color:var(--text-secondary);display:flex;gap:12px;">
+        {% if cs.has_expression %}
+        <span style="color:var(--accent);">✓ Expression</span>
+        {% endif %}
+        {% if cs.has_on_connect %}
+        <span>✓ OnConnect</span>
+        {% endif %}
+        {% if cs.has_on_disconnect %}
+        <span>✓ OnDisconnect</span>
+        {% endif %}
+        {% if cs.is_frozen %}
+        <span style="color:var(--danger);">⚠ Frozen</span>
+        {% endif %}
+      </div>
+      {% endif %}
       {% if cs.last_error %}
       <div class="serial-error">
         <strong>Last Error:</strong> {{ cs.last_error }}<br>
