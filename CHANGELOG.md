@@ -7,6 +7,32 @@ Features may evolve rapidly as SimHub integrations are explored.
 
 ---
 
+## [0.2.2] – Device Notes & Custom Serial Annotations
+**2025-12-24**
+
+### ✨ Added
+- **Device Notes** – New notes field for Arduino devices:
+  - Store wiring info (e.g., "Wires: D4, D5, D7, D8")
+  - Pin assignments, physical location notes
+  - Displayed on card with 📝 Notes header
+  - Editable via Device Settings modal
+  - Saved in `ports.json`
+- **Custom Serial Annotations** – Local notes for Custom Serial devices:
+  - Custom description field (e.g., "Boost Gauge for Audi")
+  - Notes field for calibration values, PWM ranges, expression details
+  - Edit Notes modal with orange save button
+  - Stored locally in `custom_serial_notes.json` (not in SimHub's config)
+  - Survives SimHub restarts and config changes
+
+### 🛠️ Internal
+- Added `custom_serial_notes.json` for local Custom Serial annotations
+- Added `load_custom_serial_notes()`, `save_custom_serial_notes()`, `update_custom_serial_note()` functions
+- Added `/update_custom_serial` route for saving CS notes
+- Used `data-*` attributes for safer onclick handling (handles newlines/special chars)
+- Notes field added to `scan_ports()` output
+
+---
+
 ## [0.2.1] – Session Stats & Custom Serial Integration
 **2025-12-24**
 
@@ -128,12 +154,14 @@ Features may evolve rapidly as SimHub integrations are explored.
 
 ## Planned (Upcoming)
 
-### 🚧 0.2.x – Device Health & Metadata (Mostly Complete ✅)
+### 🚧 0.2.x – Device Health & Metadata (Complete ✅)
 - ✅ SimHub config file integration (LED count, modules, motors)
 - ✅ Device linking via SimHub Unique ID
 - ✅ Custom Serial device info (boost gauges, etc.)
 - ✅ Session statistics tracking
-- Live device health / heartbeat indicators
+- ✅ Device notes (wiring info, pin assignments)
+- ✅ Custom Serial annotations (descriptions, calibration values)
+- Live device health / heartbeat indicators (future)
 - RX / TX counters (requires SimHub live API)
 - Firmware name & MCU type display (if exposed by SimHub)
 

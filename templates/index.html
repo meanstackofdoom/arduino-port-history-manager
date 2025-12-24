@@ -576,7 +576,7 @@ button{
       <div class="tooltip-bubble">NumPad 9 = Identify · NumPad 0 = Test · Auto-refresh 15s</div>
     </div>
     <button id="theme-toggle" class="footer-btn">Dark</button>
-    <span style="font-size:10px;color:var(--muted);">v0.2.1 · {{ stats.last_scan }}</span>
+    <span style="font-size:10px;color:var(--muted);">v0.2.2 · {{ stats.last_scan }}</span>
   </div>
 </div>
 
@@ -585,7 +585,7 @@ button{
     <h2 style="color:var(--accent);margin:0 0 10px">About</h2>
     <p style="font-size:12px;color:var(--muted);line-height:1.4">
       This Arduino Port Manager keeps a stable JSON registry of your SimHub Arduinos
-      (name, role, channel, group, and identify ID), and drives a custom SimHub plugin
+      (name, role, channel, group, identify ID, and notes), and drives a custom SimHub plugin
       to blink or test each device on demand.
     </p>
     <p style="font-size:12px;color:var(--muted);line-height:1.4">
@@ -593,12 +593,15 @@ button{
       multiple rigs and Arduinos without fighting COM ports.
     </p>
     <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:8px;">
-      <strong>Basic guardrails:</strong> the header shows whether SimHub is running and if the Arduino Identify plugin DLL is found.
-      Identify / Test will also report a clear error if either of those is missing.
+      <strong>Key features:</strong> SimHub config integration, device linking, session stats,
+      device notes for wiring info, and Custom Serial device annotations.
     </p>
     <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:4px;">
-      NumPad 9 / NumPad 0 hotkey bindings still can't be auto-detected, so if they aren't mapped to the plugin actions
-      Identify / Test may do nothing even though the header badges look OK.
+      <strong>Guardrails:</strong> Header shows SimHub status and plugin presence.
+      Identify/Test will report errors if SimHub or plugin is missing.
+    </p>
+    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:4px;">
+      NumPad 9/0 hotkey bindings can't be auto-detected – if not mapped, Identify/Test may silently fail.
     </p>
     <div style="display:flex;justify-content:flex-end;margin-top:10px;">
       <button type="button"
@@ -612,21 +615,23 @@ button{
 
 <div class="modal" id="planned-modal">
   <div class="modal-box">
-    <h2 style="color:var(--accent);margin:0 0 10px">Planned Features</h2>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:6px;"><strong>0.2.x – Device Health &amp; Metadata</strong></p>
+    <h2 style="color:var(--accent);margin:0 0 10px">Roadmap</h2>
+    <p style="font-size:12px;color:var(--accent);margin-bottom:6px;"><strong>0.2.x – Device Health &amp; Metadata ✅</strong></p>
     <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:0;">
+      <li style="color:var(--accent);">✅ SimHub config integration (LED count, modules, motors)</li>
+      <li style="color:var(--accent);">✅ Device linking via SimHub Unique ID</li>
+      <li style="color:var(--accent);">✅ Custom Serial device info (boost gauges, etc.)</li>
+      <li style="color:var(--accent);">✅ Session statistics tracking</li>
+      <li style="color:var(--accent);">✅ Device notes (wiring info, pin assignments)</li>
+      <li style="color:var(--accent);">✅ Custom Serial annotations</li>
       <li>Live device health / heartbeat indicators</li>
-      <li>RX / TX counters from SimHub (when API available)</li>
-      <li>Firmware name &amp; MCU type display</li>
-      <li>Baud rate &amp; LED count metadata</li>
-      <li>Improved USB key normalization</li>
+      <li>RX / TX counters (requires SimHub live API)</li>
     </ul>
     <p style="font-size:12px;color:var(--muted);margin-bottom:6px;margin-top:10px;"><strong>0.3.x – Power User Features</strong></p>
     <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:0;">
-      <li>Improved multi-profile management (per-rig presets, cloning, etc.)</li>
-      <li>Export / import configurations beyond simple JSON snapshots</li>
+      <li>Improved multi-profile management (per-rig presets, cloning)</li>
+      <li>Export / import configurations</li>
       <li>Multi-rig support</li>
-      <li>Improved SimHub API integration (if available)</li>
       <li>Optional background polling service</li>
     </ul>
     <div style="display:flex;justify-content:flex-end;margin-top:10px;">
@@ -642,19 +647,38 @@ button{
 <div class="modal" id="changelog-modal">
   <div class="modal-box" style="max-height:70vh;overflow:auto;">
     <h2 style="color:var(--accent);margin:0 0 10px">Changelog</h2>
-    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:6px;">
-      Version <strong>0.1.0</strong> – Initial public release (2025-12-24).
+    <p style="font-size:12px;color:var(--accent);line-height:1.4;margin-bottom:4px;">
+      <strong>v0.2.2</strong> – Device Notes &amp; Custom Serial Annotations
     </p>
-    <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:0;">
-      <li>Initial SimHub Arduino Manager dashboard</li>
-      <li>Automatic detection of connected Arduino serial ports</li>
-      <li>Persistent device registry in <code>ports.json</code></li>
-      <li>Per-device Identify ID, roles, tags, channels and groups</li>
-      <li>Identify / Test actions wired through a custom SimHub plugin</li>
-      <li>Profiles, hardware details, and connection duration per device</li>
+    <ul style="font-size:11px;color:var(--muted);padding-left:18px;margin-top:0;margin-bottom:10px;">
+      <li>Notes field for Arduino devices (wiring info, pins)</li>
+      <li>Custom Serial annotations (descriptions, calibration values)</li>
+      <li>Edit Notes modal for Custom Serial devices</li>
     </ul>
-    <p style="font-size:12px;color:var(--muted);margin-top:10px;">
-      See <code>CHANGELOG.md</code> in the project root for the full history and planned roadmap.
+    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:4px;">
+      <strong>v0.2.1</strong> – Session Stats &amp; Custom Serial Integration
+    </p>
+    <ul style="font-size:11px;color:var(--muted);padding-left:18px;margin-top:0;margin-bottom:10px;">
+      <li>Session statistics modal (uptime, clicks, installs)</li>
+      <li>Custom Serial device info from SimHub config</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:4px;">
+      <strong>v0.2.0</strong> – SimHub Config Integration &amp; UI Redesign
+    </p>
+    <ul style="font-size:11px;color:var(--muted);padding-left:18px;margin-top:0;margin-bottom:10px;">
+      <li>SimHub config reader (SerialDashPlugin.json)</li>
+      <li>Device linking via SimHub Unique ID</li>
+      <li>Complete UI redesign with professional dark theme</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:4px;">
+      <strong>v0.1.0</strong> – Initial Release
+    </p>
+    <ul style="font-size:11px;color:var(--muted);padding-left:18px;margin-top:0;">
+      <li>Initial SimHub Arduino Manager dashboard</li>
+      <li>Device detection, Identify/Test, profiles</li>
+    </ul>
+    <p style="font-size:10px;color:var(--muted);margin-top:10px;">
+      See <code>CHANGELOG.md</code> for full history.
     </p>
     <div style="display:flex;justify-content:flex-end;margin-top:10px;">
       <button type="button"

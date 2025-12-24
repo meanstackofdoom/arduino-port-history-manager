@@ -29,13 +29,23 @@ and a fast UI to identify, test, and organize them without fighting COM ports.
 - **Hardware details**
   - COM port, USB VID:PID, serial, description, manufacturer
   - "Connected for" indicator derived from first-seen timestamp
-- **SimHub Config Integration** *(New in v0.2.0)*
+- **SimHub Config Integration** *(v0.2.0)*
   - Reads `SerialDashPlugin.json` directly from SimHub's data folder
   - Link local devices to SimHub devices via their Unique ID
   - Shows SimHub metadata on linked cards:
     - Device name, RGB LED count, display modules, motors
     - Button read status, enabled/disabled state
   - Green "SIMHUB LINKED" badge on linked device cards
+- **Device Notes & Annotations** *(New in v0.2.2)*
+  - Store wiring info for Arduino devices (e.g., "Wires: D4, D5, D7, D8")
+  - Custom descriptions for Custom Serial devices (e.g., "Boost Gauge for Audi")
+  - Notes for calibration values, PWM ranges, pin assignments
+  - Displayed on cards with 📝 Notes header
+  - Custom Serial notes stored locally (survives SimHub config changes)
+- **Session Statistics** *(v0.2.1)*
+  - Track app uptime, identify/test clicks, installs
+  - Session start time and last scan time
+  - Profiles loaded/saved counts
 
 ---
 
@@ -59,11 +69,13 @@ and a fast UI to identify, test, and organize them without fighting COM ports.
 
 ## 🧱 Architecture
 
-- `app.py` – Flask app, routes, profile handling, and update logic.
+- `app.py` – Flask app, routes, profile handling, session stats, and update logic.
 - `port_manager.py` – port scanning, config load/save, ID assignment, identify/test triggers, SimHub config reader.
 - `templates/index.html` – single-page UI (cards, modals, footer, theming).
 - `ports.json` – device registry (generated/maintained automatically).
+- `custom_serial_notes.json` – local annotations for Custom Serial devices (auto-generated).
 - SimHub reads from: `C:\Program Files (x86)\SimHub\PluginsData\Common\SerialDashPlugin.json`
+- Custom Serial config: `C:\Program Files (x86)\SimHub\PluginsData\Common\CustomSerialPlugin.GeneralSettings2.json`
 - `plugin/ArduinoIdentifyPlugin` – SimHub C# plugin that exposes:
   - `IdentifyPulse`
   - `IdentifyTargetId`
@@ -150,15 +162,22 @@ After installing everything, you can quickly verify the setup with this checklis
 4. **Edit metadata**
    - Click **Edit**, change name/role/tags/channel/group, and **Save**.
    - Confirm the card updates immediately and `ports.json` reflects the changes.
-5. **Link to SimHub device** *(v0.2.0+)*
+5. **Add notes** *(v0.2.2+)*
+   - Click **Edit**, add notes (e.g., "Wires: D4, D5, D7, D8") and **Save**.
+   - Confirm the card shows the 📝 Notes section with your text.
+6. **Link to SimHub device** *(v0.2.0+)*
    - Click **Edit** and use the **SimHub Link** dropdown to select a SimHub device.
    - Save and confirm the card shows a green "SIMHUB LINKED" badge with LED count, modules, etc.
-6. **Identify / Test**
+7. **Identify / Test**
    - Click **Identify** and check the board blinks the expected identify pattern.
    - Click **Test** and check the board runs the richer test pattern.
-7. **Persistence**
+8. **Custom Serial notes** *(v0.2.2+)*
+   - If you have Custom Serial devices (boost gauge, etc.), click **Edit Notes** on their card.
+   - Add a description and notes, then **Save**.
+   - Confirm the notes appear on the Custom Serial card.
+9. **Persistence**
    - Restart the Flask app and reload the page.
-   - Confirm the card, metadata, ID, and SimHub link are still correct.
+   - Confirm the card, metadata, ID, SimHub link, and notes are all still correct.
 
 If all steps pass, your SimHub Arduino Manager stack is wired correctly end-to-end.
 
