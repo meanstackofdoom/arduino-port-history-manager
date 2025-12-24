@@ -397,12 +397,29 @@ button{
         {% endif %}
       </div>
       {% endif %}
+      {% if cs.custom_description or cs.notes %}
+      <div style="margin-top:8px;padding:8px;background:var(--panel);border-radius:6px;border:1px solid var(--border-subtle);">
+        {% if cs.custom_description %}
+        <div style="font-size:11px;color:var(--text);margin-bottom:4px;"><strong>{{ cs.custom_description }}</strong></div>
+        {% endif %}
+        {% if cs.notes %}
+        <div style="font-size:10px;color:var(--muted);white-space:pre-wrap;">{{ cs.notes }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
       {% if cs.last_error %}
       <div class="serial-error">
         <strong>Last Error:</strong> {{ cs.last_error }}<br>
         <span style="font-size:9px;">{{ cs.last_error_date }}</span>
       </div>
       {% endif %}
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+        <button class="btn-edit" style="background:var(--warning);font-size:10px;padding:4px 10px;" 
+          data-port="{{ cs.port }}"
+          data-desc="{{ cs.custom_description|default('', true) }}"
+          data-notes="{{ cs.notes|default('', true) }}"
+          onclick="openCsModal(this.dataset.port, this.dataset.desc, this.dataset.notes)">Edit Notes</button>
+      </div>
     </div>
     {% endfor %}
   </div>
@@ -498,6 +515,13 @@ button{
       {% if not d.simhub and d.connected_for and not (d.description or d.manufacturer or d.vid) %}
       <div class="connection-time">Connected for {{ d.connected_for }}</div>
       {% endif %}
+
+      {% if d.notes %}
+      <div style="margin-top:10px;padding:8px 10px;background:var(--panel-alt);border-radius:6px;border:1px solid var(--border-subtle);">
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">📝 Notes</div>
+        <div style="font-size:11px;color:var(--text-secondary);white-space:pre-wrap;">{{ d.notes }}</div>
+      </div>
+      {% endif %}
     </div>
 
     <div class="card-actions">
@@ -517,7 +541,16 @@ button{
         <button class="btn-test" title="Test pattern (NumPad 0)" onclick="testDevice('{{ d.key }}',{{ d.identify_id or 0 }})">Test</button>
         {% endif %}
 
-        <button class="btn-edit" onclick="openModal('{{ d.key }}','{{ d.name }}','{{ d.tags|join(', ') }}','{{ d.role }}',{{ d.channel or 0 }},'{{ d.group or '' }}','{{ d.simhub_uid or '' }}')">Edit</button>
+        <button class="btn-edit" 
+          data-key="{{ d.key }}"
+          data-name="{{ d.name }}"
+          data-tags="{{ d.tags|join(', ') }}"
+          data-role="{{ d.role }}"
+          data-channel="{{ d.channel or 0 }}"
+          data-group="{{ d.group or '' }}"
+          data-shuid="{{ d.simhub_uid or '' }}"
+          data-notes="{{ d.notes|default('', true) }}"
+          onclick="openModal(this.dataset.key, this.dataset.name, this.dataset.tags, this.dataset.role, this.dataset.channel, this.dataset.group, this.dataset.shuid, this.dataset.notes)">Edit</button>
       </div>
     </div>
   </div>
@@ -695,6 +728,35 @@ button{
   </div>
 </div>
 
+<div class="modal" id="cs-modal">
+<form class="modal-box" method="post" action="/update_custom_serial">
+  <h2 style="color:var(--warning);margin:0 0 15px;display:flex;align-items:center;gap:8px;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    Custom Serial Notes
+  </h2>
+  <input type="hidden" name="port" id="cs-port">
+  <input name="description" id="cs-description" placeholder="Description (e.g. Boost Gauge for Audi)">
+  <div class="field-help">
+    Custom description for this serial device (stored locally, not in SimHub).
+  </div>
+  <textarea name="notes" id="cs-notes" rows="4" placeholder="Notes (e.g. PWM range 10-245, vacuum floor 57)" style="resize:vertical;"></textarea>
+  <div class="field-help">
+    Freeform notes – calibration values, wiring info, expression details, etc.
+  </div>
+  <div style="display:flex;gap:10px">
+    <button type="button"
+            style="background:#444;flex:1"
+            onclick="closeCsModal()">
+      Cancel
+    </button>
+    <button type="submit"
+            style="background:var(--warning);color:#000;flex:1">
+      Save
+    </button>
+  </div>
+</form>
+</div>
+
 <div class="modal" id="modal">
 <form class="modal-box" method="post" action="/update">
   <h2 style="color:var(--accent);margin:0 0 15px">
@@ -743,6 +805,10 @@ button{
   <div class="field-help">
     Link to a SimHub device to pull metadata (LED count, modules, motors, etc.).
   </div>
+  <textarea name="notes" id="m-notes" rows="3" placeholder="Notes (e.g. Wires: D4, D5, D7, D8)" style="resize:vertical;"></textarea>
+  <div class="field-help">
+    Freeform notes – wiring info, pin assignments, physical location, etc.
+  </div>
   <div style="display:flex;gap:10px">
     <button type="button"
             style="background:#444;flex:1"
@@ -770,7 +836,12 @@ const m_role = document.getElementById("m-role");
 const m_channel = document.getElementById("m-channel");
 const m_group = document.getElementById("m-group");
 const m_simhub_uid = document.getElementById("m-simhub-uid");
+const m_notes = document.getElementById("m-notes");
 const themeToggle = document.getElementById("theme-toggle");
+const csModal = document.getElementById("cs-modal");
+const cs_port = document.getElementById("cs-port");
+const cs_description = document.getElementById("cs-description");
+const cs_notes = document.getElementById("cs-notes");
 
 function installDevice(key){
   fetch(`/install/${key}`,{method:"POST"})
@@ -826,7 +897,7 @@ function testDevice(key,id){
     });
 }
 
-function openModal(k,n,t,r,ch,g,shuid){
+function openModal(k,n,t,r,ch,g,shuid,notes){
   modal.classList.add("open");
   m_key.value = k;
   m_name.value = n || "";
@@ -835,6 +906,17 @@ function openModal(k,n,t,r,ch,g,shuid){
   m_channel.value = (ch || 0);
   m_group.value = g || "";
   m_simhub_uid.value = shuid || "";
+  m_notes.value = notes || "";
+}
+
+function openCsModal(port, desc, notes) {
+  csModal.classList.add("open");
+  cs_port.value = port || "";
+  cs_description.value = desc || "";
+  cs_notes.value = notes || "";
+}
+function closeCsModal() {
+  csModal.classList.remove("open");
 }
 function closeModal(){
   modal.classList.remove("open");
@@ -851,7 +933,8 @@ setInterval(()=>{
     aboutModal.classList.contains("open") ||
     plannedModal.classList.contains("open") ||
     changelogModal.classList.contains("open") ||
-    statsModal.classList.contains("open");
+    statsModal.classList.contains("open") ||
+    (csModal && csModal.classList.contains("open"));
   if(!anyModalOpen) location.reload();
 },15000);
 

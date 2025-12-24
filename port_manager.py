@@ -10,6 +10,7 @@ from datetime import datetime
 # =========================
 
 CONFIG_FILE = Path(r"C:\Users\endfm\Desktop\ports\ports.json")
+CUSTOM_SERIAL_NOTES_FILE = Path(r"C:\Users\endfm\Desktop\ports\custom_serial_notes.json")
 
 # SimHub config paths
 SIMHUB_CONFIG_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\SerialDashPlugin.json")
@@ -20,6 +21,54 @@ SIMHUB_CUSTOM_SERIAL_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Com
 # Cached data
 _simhub_port_lists: dict = {"whitelist": [], "blacklist": []}
 _simhub_active_profiles: dict = {}
+_custom_serial_notes: dict = {}
+
+
+# =========================
+# Custom Serial Notes (local annotations)
+# =========================
+
+def load_custom_serial_notes() -> dict:
+    """Load local notes/annotations for Custom Serial devices."""
+    global _custom_serial_notes
+    if not CUSTOM_SERIAL_NOTES_FILE.exists():
+        return {}
+    try:
+        text = CUSTOM_SERIAL_NOTES_FILE.read_text().strip()
+        if not text:
+            return {}
+        _custom_serial_notes = json.loads(text)
+        return _custom_serial_notes
+    except Exception as e:
+        print(f"[NOTES] Failed to load custom serial notes: {e}")
+        return {}
+
+
+def save_custom_serial_notes():
+    """Save local notes/annotations for Custom Serial devices."""
+    global _custom_serial_notes
+    CUSTOM_SERIAL_NOTES_FILE.write_text(json.dumps(_custom_serial_notes, indent=2))
+
+
+def update_custom_serial_note(port: str, description: str = None, notes: str = None):
+    """Update notes for a Custom Serial device by port name."""
+    global _custom_serial_notes
+    if port not in _custom_serial_notes:
+        _custom_serial_notes[port] = {}
+    
+    if description is not None:
+        _custom_serial_notes[port]["description"] = description
+    if notes is not None:
+        _custom_serial_notes[port]["notes"] = notes
+    
+    save_custom_serial_notes()
+    print(f"[NOTES] Updated notes for {port}: {_custom_serial_notes[port]}")
+
+
+def get_custom_serial_note(port: str) -> dict:
+    """Get notes for a Custom Serial device."""
+    global _custom_serial_notes
+    return _custom_serial_notes.get(port, {})
 
 # =========================
 # SimHub Config Reader
@@ -155,10 +204,14 @@ def load_custom_serial_devices() -> list:
         on_connect = dev.get("OnConnectMessage", {}).get("Expression", "")
         on_disconnect = dev.get("OnDisconnectMessage", {}).get("Expression", "")
         
+        # Get local notes for this device
+        port_name = dev.get("SerialPortName", "Unknown")
+        local_notes = get_custom_serial_note(port_name)
+        
         devices.append({
             "name": dev.get("Name", "Custom Serial Device"),
             "description": dev.get("Description", ""),
-            "port": dev.get("SerialPortName", "Unknown"),
+            "port": port_name,
             "baud_rate": dev.get("BaudRate", 0),
             "is_enabled": dev.get("IsEnabled", False),
             "is_connected": dev.get("IsConnected", False),
@@ -177,6 +230,9 @@ def load_custom_serial_devices() -> list:
             "expression_type": expression_type,
             "has_on_connect": bool(on_connect),
             "has_on_disconnect": bool(on_disconnect),
+            # Local notes (editable)
+            "custom_description": local_notes.get("description", ""),
+            "notes": local_notes.get("notes", ""),
         })
     
     print(f"[SIMHUB] Loaded {len(devices)} Custom Serial devices")
@@ -261,6 +317,7 @@ def load_config():
         return {}
 
 saved = load_config()
+load_custom_serial_notes()  # Load local notes for Custom Serial devices
 
 
 def save_config():
@@ -380,6 +437,7 @@ def scan_ports():
     _simhub_devices_cache = load_simhub_devices()
     load_simhub_port_lists()
     load_simhub_profiles()
+    load_custom_serial_notes()
 
     for p in ports:
         key = make_device_key(p)
@@ -436,6 +494,7 @@ def scan_ports():
             "simhub_uid": linked_uid,
             "simhub": simhub_info,
             "port_status": get_port_status(p.device),
+            "notes": entry.get("notes", ""),
         })
 
     if touched:

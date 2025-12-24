@@ -207,10 +207,31 @@ def update():
         # Allow unlinking by clearing the field
         del current["simhub_uid"]
 
+    # Notes (freeform text for wiring info, etc.)
+    notes_val = (request.form.get("notes") or "").strip()
+    current["notes"] = notes_val
+
     port_manager.saved[key] = current
 
     print(f"[UPDATE] Saved settings for {key}: {current}")
     port_manager.save_config()
+    return redirect("/")
+
+
+@app.route("/update_custom_serial", methods=["POST"])
+def update_custom_serial():
+    """Update local notes/description for a Custom Serial device."""
+    port = request.form.get("port")
+    
+    if not port:
+        print("[WARN] Update custom serial called with empty port – ignoring")
+        return redirect("/")
+    
+    description = request.form.get("description", "").strip()
+    notes = request.form.get("notes", "").strip()
+    
+    port_manager.update_custom_serial_note(port, description=description, notes=notes)
+    
     return redirect("/")
 
 
