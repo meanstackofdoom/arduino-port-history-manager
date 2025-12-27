@@ -244,12 +244,12 @@ button{
   box-shadow:0 20px 40px rgba(0,0,0,0.5);
 }
 .modal-box h2{font-size:18px;font-weight:600;color:var(--accent);margin-bottom:16px;}
-.modal-box input,.modal-box select{
+.modal-box input,.modal-box select,.modal-box textarea{
   width:100%;margin-bottom:8px;padding:10px 12px;border-radius:6px;
   background:var(--panel-alt);color:var(--text);border:1px solid var(--border);
-  font-size:13px;
+  font-size:13px;font-family:inherit;
 }
-.modal-box input:focus,.modal-box select:focus{outline:none;border-color:var(--accent);}
+.modal-box input:focus,.modal-box select:focus,.modal-box textarea:focus{outline:none;border-color:var(--accent);}
 .field-help{font-size:10px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;}
 
 /* Custom Serial Section */
@@ -416,8 +416,8 @@ button{
       <div style="margin-top:10px;display:flex;justify-content:flex-end;">
         <button class="btn-edit" style="background:var(--warning);font-size:10px;padding:4px 10px;" 
           data-port="{{ cs.port }}"
-          data-desc="{{ cs.custom_description|default('', true) }}"
-          data-notes="{{ cs.notes|default('', true) }}"
+          data-desc="{{ cs.custom_description|default('', true)|e }}"
+          data-notes="{{ cs.notes|default('', true)|e }}"
           onclick="openCsModal(this.dataset.port, this.dataset.desc, this.dataset.notes)">Edit Notes</button>
       </div>
     </div>
@@ -543,13 +543,13 @@ button{
 
         <button class="btn-edit" 
           data-key="{{ d.key }}"
-          data-name="{{ d.name }}"
-          data-tags="{{ d.tags|join(', ') }}"
+          data-name="{{ d.name|e }}"
+          data-tags="{{ d.tags|join(', ')|e }}"
           data-role="{{ d.role }}"
           data-channel="{{ d.channel or 0 }}"
-          data-group="{{ d.group or '' }}"
+          data-group="{{ d.group or ''|e }}"
           data-shuid="{{ d.simhub_uid or '' }}"
-          data-notes="{{ d.notes|default('', true) }}"
+          data-notes="{{ d.notes|default('', true)|e }}"
           onclick="openModal(this.dataset.key, this.dataset.name, this.dataset.tags, this.dataset.role, this.dataset.channel, this.dataset.group, this.dataset.shuid, this.dataset.notes)">Edit</button>
       </div>
     </div>
