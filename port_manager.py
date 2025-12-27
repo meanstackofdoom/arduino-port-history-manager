@@ -9,8 +9,10 @@ from datetime import datetime
 # Config
 # =========================
 
-CONFIG_FILE = Path(r"C:\Users\endfm\Desktop\ports\ports.json")
-CUSTOM_SERIAL_NOTES_FILE = Path(r"C:\Users\endfm\Desktop\ports\custom_serial_notes.json")
+# Use the directory where this script is located for config files
+_SCRIPT_DIR = Path(__file__).parent.resolve()
+CONFIG_FILE = _SCRIPT_DIR / "ports.json"
+CUSTOM_SERIAL_NOTES_FILE = _SCRIPT_DIR / "custom_serial_notes.json"
 
 # SimHub config paths
 SIMHUB_CONFIG_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\SerialDashPlugin.json")
@@ -47,6 +49,8 @@ def load_custom_serial_notes() -> dict:
 def save_custom_serial_notes():
     """Save local notes/annotations for Custom Serial devices."""
     global _custom_serial_notes
+    # Ensure parent directory exists
+    CUSTOM_SERIAL_NOTES_FILE.parent.mkdir(parents=True, exist_ok=True)
     CUSTOM_SERIAL_NOTES_FILE.write_text(json.dumps(_custom_serial_notes, indent=2))
 
 
@@ -321,6 +325,8 @@ load_custom_serial_notes()  # Load local notes for Custom Serial devices
 
 
 def save_config():
+    # Ensure parent directory exists
+    CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
     CONFIG_FILE.write_text(json.dumps(saved, indent=2))
 
 # =========================
