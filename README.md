@@ -36,25 +36,6 @@ A powerful port tracking and analytics tool for Arduino devices. It provides a s
   - "Connected for" indicator derived from first-seen timestamp
   - Connection history per device
 
----
-
-## 🖼 UI Preview
-
-> Dark theme – Port History Manager showing device cards, analytics dashboard, and activity timeline.
-
-**Main dashboard**
-
-![Main dashboard](docs/website.png)
-
-**Analytics panel**
-
-![Analytics panel](docs/analytics.png)
-
-**Activity timeline**
-
-![Activity timeline](docs/timeline.png)
-
----
 
 ## 🧱 Architecture
 
